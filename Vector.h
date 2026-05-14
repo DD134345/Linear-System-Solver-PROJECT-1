@@ -1,6 +1,7 @@
 #pragma once
 #include <cassert>
 #include <cmath>
+#include <utility>
 
 class Vector {
 private:
@@ -10,6 +11,9 @@ private:
 public:
     explicit Vector(int size);
     Vector(const Vector& other);
+    Vector(Vector&& other) noexcept;
+    Vector& operator=(const Vector& other);
+    Vector& operator=(Vector&& other) noexcept;
     ~Vector();
 
     int GetSize() const { return mSize; }

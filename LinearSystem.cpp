@@ -7,13 +7,16 @@
 
 // ─────────────────────── LinearSystem ───────────────────────────────────────
 
-LinearSystem::LinearSystem(const Matrix& A, const Vector& b)
+LinearSystem::LinearSystem(const Matrix& A, const Vector& b, double tolerance)
     : mSize(b.GetSize()),
       mpA(new Matrix(A)),
-      mpb(new Vector(b))
+      mpb(new Vector(b)),
+      mTolerance(tolerance)
 {
-    assert(A.GetNumRows() == A.GetNumCols());
-    assert(A.GetNumRows() == b.GetSize());
+    if (A.GetNumRows() != A.GetNumCols())
+        throw std::invalid_argument("Matrix must be square");
+    if (A.GetNumRows() != b.GetSize())
+        throw std::invalid_argument("Matrix and vector dimension mismatch");
 }
 
 LinearSystem::~LinearSystem() {
@@ -44,7 +47,8 @@ Vector LinearSystem::Solve() {
         }
 
         double pivot = A(col + 1, col + 1);
-        assert(std::abs(pivot) > 1e-14); // singular matrix
+        if (std::abs(pivot) < mTolerance)
+            throw std::runtime_error("Matrix is singular or near-singular");
 
         // Eliminate below
         for (int row = col + 1; row < n; ++row) {
@@ -61,6 +65,8 @@ Vector LinearSystem::Solve() {
         double sum = b[i];
         for (int j = i + 1; j < n; ++j)
             sum -= A(i + 1, j + 1) * x[j];
+        if (std::abs(A(i + 1, i + 1)) < mTolerance)
+            throw std::runtime_error("Zero pivot encountered during back substitution");
         x[i] = sum / A(i + 1, i + 1);
     }
     return x;
@@ -68,8 +74,8 @@ Vector LinearSystem::Solve() {
 
 // ─────────────────────── PosSymLinSystem ────────────────────────────────────
 
-PosSymLinSystem::PosSymLinSystem(const Matrix& A, const Vector& b)
-    : LinearSystem(A, b) {}
+PosSymLinSystem::PosSymLinSystem(const Matrix& A, const Vector& b, double tolerance)
+    : LinearSystem(A, b, tolerance) {}
 
 bool PosSymLinSystem::IsSymmetric(double tol) const {
     for (int i = 1; i <= mSize; ++i)
@@ -91,7 +97,7 @@ Vector PosSymLinSystem::Solve() {
     Vector p(r);                      // p = r
     double rsOld = r.Dot(r);
 
-    const double tol = 1e-10;
+    const double tol = mTolerance;
     const int    maxIter = 10 * n;
 
     for (int iter = 0; iter < maxIter; ++iter) {

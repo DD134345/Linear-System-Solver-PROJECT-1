@@ -9,6 +9,7 @@ protected:
     int     mSize;
     Matrix* mpA;
     Vector* mpb;
+    double  mTolerance;  // configurable tolerance for singularity check
 
 private:
     LinearSystem();                          // disabled
@@ -16,19 +17,21 @@ private:
     LinearSystem& operator=(const LinearSystem&); // disabled
 
 public:
-    LinearSystem(const Matrix& A, const Vector& b);
+    LinearSystem(const Matrix& A, const Vector& b, double tolerance = 1e-12);
     virtual ~LinearSystem();
 
     virtual Vector Solve();   // Gaussian elimination + partial pivot
+    void SetTolerance(double tol) { mTolerance = tol; }
+    double GetTolerance() const { return mTolerance; }
 };
 
 // ─── Derived: Conjugate Gradient for symmetric positive definite systems ─────
 
 class PosSymLinSystem : public LinearSystem {
 public:
-    PosSymLinSystem(const Matrix& A, const Vector& b);
+    PosSymLinSystem(const Matrix& A, const Vector& b, double tolerance = 1e-10);
     Vector Solve() override;   // conjugate gradient method
 
 private:
-    bool IsSymmetric(double tol = 1e-10) const;
+    bool IsSymmetric(double tol) const;
 };

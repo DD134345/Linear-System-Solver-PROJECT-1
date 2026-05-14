@@ -1,6 +1,7 @@
 #pragma once
 #include "Vector.h"
 #include <cassert>
+#include <utility>
 
 class Matrix {
 private:
@@ -14,6 +15,9 @@ private:
 public:
     Matrix(int rows, int cols);
     Matrix(const Matrix& other);
+    Matrix(Matrix&& other) noexcept;
+    Matrix& operator=(const Matrix& other);
+    Matrix& operator=(Matrix&& other) noexcept;
     ~Matrix();
 
     int GetNumRows() const { return mNumRows; }
