@@ -11,6 +11,7 @@
 #include "Vector.h"
 #include "Matrix.h"
 #include "LinearSystem.h"
+using namespace std;
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Printing helpers
