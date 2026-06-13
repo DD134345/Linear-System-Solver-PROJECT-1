@@ -16,4 +16,4 @@ clean:
 	rm -f $(OBJS) $(TARGET)
 
 run: $(TARGET)
-	./$(TARGET) machine.data
+	./$(TARGET)

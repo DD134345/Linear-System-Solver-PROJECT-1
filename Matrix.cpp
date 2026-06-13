@@ -1,10 +1,7 @@
 #include "Matrix.h"
 #include <cassert>
 #include <cmath>
-#include <stdexcept>
 #include <algorithm>
-
-// ──────────────────────────── memory helpers ────────────────────────────────
 
 void Matrix::Allocate() {
     mData = new double*[mNumRows];
@@ -13,80 +10,49 @@ void Matrix::Allocate() {
 }
 
 void Matrix::Deallocate() {
-    if (mData) {
-        for (int i = 0; i < mNumRows; ++i) delete[] mData[i];
-        delete[] mData;
-        mData = nullptr;
-    }
+    for (int i = 0; i < mNumRows; ++i) delete[] mData[i];
+    delete[] mData;
 }
 
-// ──────────────────────────── constructors ──────────────────────────────────
-
-Matrix::Matrix(int rows, int cols) : mNumRows(rows), mNumCols(cols), mData(nullptr) {
-    if (rows <= 0 || cols <= 0) throw std::invalid_argument("Matrix dimensions must be positive");
+Matrix::Matrix(int rows, int cols) : mNumRows(rows), mNumCols(cols) {
+    assert(rows > 0 && cols > 0);
     Allocate();
 }
 
-Matrix::Matrix(const Matrix& other) : mNumRows(other.mNumRows), mNumCols(other.mNumCols), mData(nullptr) {
+Matrix::Matrix(const Matrix& other) : mNumRows(other.mNumRows), mNumCols(other.mNumCols) {
     Allocate();
     for (int i = 0; i < mNumRows; ++i)
         for (int j = 0; j < mNumCols; ++j)
             mData[i][j] = other.mData[i][j];
 }
 
-Matrix::Matrix(Matrix&& other) noexcept : mNumRows(other.mNumRows), mNumCols(other.mNumCols), mData(other.mData) {
-    other.mNumRows = 0;
-    other.mNumCols = 0;
-    other.mData = nullptr;
-}
-
 Matrix& Matrix::operator=(const Matrix& other) {
-    if (this == &other) return *this;
-    if (mNumRows != other.mNumRows || mNumCols != other.mNumCols) {
+    if (this != &other) {
         Deallocate();
         mNumRows = other.mNumRows;
         mNumCols = other.mNumCols;
         Allocate();
+        for (int i = 0; i < mNumRows; ++i)
+            for (int j = 0; j < mNumCols; ++j)
+                mData[i][j] = other.mData[i][j];
     }
-    for (int i = 0; i < mNumRows; ++i)
-        for (int j = 0; j < mNumCols; ++j)
-            mData[i][j] = other.mData[i][j];
-    return *this;
-}
-
-Matrix& Matrix::operator=(Matrix&& other) noexcept {
-    if (this == &other) return *this;
-    Deallocate();
-    mNumRows = other.mNumRows;
-    mNumCols = other.mNumCols;
-    mData = other.mData;
-    other.mNumRows = 0;
-    other.mNumCols = 0;
-    other.mData = nullptr;
     return *this;
 }
 
 Matrix::~Matrix() { Deallocate(); }
 
-// ──────────────────────────── element access ────────────────────────────────
-
 double& Matrix::operator()(int i, int j) {
-    if (i < 1 || i > mNumRows || j < 1 || j > mNumCols)
-        throw std::out_of_range("Matrix index out of range");
+    assert(i >= 1 && i <= mNumRows && j >= 1 && j <= mNumCols);
     return mData[i - 1][j - 1];
 }
 
 double Matrix::operator()(int i, int j) const {
-    if (i < 1 || i > mNumRows || j < 1 || j > mNumCols)
-        throw std::out_of_range("Matrix index out of range");
+    assert(i >= 1 && i <= mNumRows && j >= 1 && j <= mNumCols);
     return mData[i - 1][j - 1];
 }
 
-// ──────────────────────────── operators ─────────────────────────────────────
-
 Matrix Matrix::operator+(const Matrix& m) const {
-    if (mNumRows != m.mNumRows || mNumCols != m.mNumCols)
-        throw std::invalid_argument("Matrix dimension mismatch");
+    assert(mNumRows == m.mNumRows && mNumCols == m.mNumCols);
     Matrix result(mNumRows, mNumCols);
     for (int i = 0; i < mNumRows; ++i)
         for (int j = 0; j < mNumCols; ++j)
@@ -95,8 +61,7 @@ Matrix Matrix::operator+(const Matrix& m) const {
 }
 
 Matrix Matrix::operator-(const Matrix& m) const {
-    if (mNumRows != m.mNumRows || mNumCols != m.mNumCols)
-        throw std::invalid_argument("Matrix dimension mismatch");
+    assert(mNumRows == m.mNumRows && mNumCols == m.mNumCols);
     Matrix result(mNumRows, mNumCols);
     for (int i = 0; i < mNumRows; ++i)
         for (int j = 0; j < mNumCols; ++j)
@@ -105,8 +70,7 @@ Matrix Matrix::operator-(const Matrix& m) const {
 }
 
 Matrix Matrix::operator*(const Matrix& m) const {
-    if (mNumCols != m.mNumRows)
-        throw std::invalid_argument("Matrix multiplication dimension mismatch");
+    assert(mNumCols == m.mNumRows);
     Matrix result(mNumRows, m.mNumCols);
     for (int i = 0; i < mNumRows; ++i)
         for (int j = 0; j < m.mNumCols; ++j) {
@@ -127,8 +91,7 @@ Matrix Matrix::operator*(double s) const {
 }
 
 Vector Matrix::operator*(const Vector& v) const {
-    if (mNumCols != v.GetSize())
-        throw std::invalid_argument("Matrix-Vector multiplication dimension mismatch");
+    assert(mNumCols == v.GetSize());
     Vector result(mNumRows);
     for (int i = 0; i < mNumRows; ++i) {
         double sum = 0.0;
@@ -141,8 +104,6 @@ Vector Matrix::operator*(const Vector& v) const {
 
 Matrix operator*(double s, const Matrix& m) { return m * s; }
 
-// ──────────────────────────── transpose ─────────────────────────────────────
-
 Matrix Matrix::Transpose() const {
     Matrix result(mNumCols, mNumRows);
     for (int i = 0; i < mNumRows; ++i)
@@ -151,19 +112,13 @@ Matrix Matrix::Transpose() const {
     return result;
 }
 
-// ──────────────────────────── determinant (LU) ──────────────────────────────
-
 double Matrix::Determinant() const {
-    if (mNumRows != mNumCols)
-        throw std::invalid_argument("Determinant requires square matrix");
+    assert(mNumRows == mNumCols);
     int n = mNumRows;
-
-    // Working copy
     Matrix A(*this);
     double det = 1.0;
 
     for (int col = 0; col < n; ++col) {
-        // Partial pivot
         int pivotRow = col;
         for (int row = col + 1; row < n; ++row)
             if (std::abs(A.mData[row][col]) > std::abs(A.mData[pivotRow][col]))
@@ -175,7 +130,6 @@ double Matrix::Determinant() const {
         }
 
         if (std::abs(A.mData[col][col]) < 1e-14) return 0.0;
-
         det *= A.mData[col][col];
 
         for (int row = col + 1; row < n; ++row) {
@@ -187,22 +141,17 @@ double Matrix::Determinant() const {
     return det;
 }
 
-// ──────────────────────────── inverse (Gauss-Jordan) ────────────────────────
-
 Matrix Matrix::Inverse() const {
-    if (mNumRows != mNumCols)
-        throw std::invalid_argument("Inverse requires square matrix");
+    assert(mNumRows == mNumCols);
     int n = mNumRows;
-
-    // Augmented [A | I]
     Matrix aug(n, 2 * n);
+
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j)
             aug.mData[i][j] = mData[i][j];
         aug.mData[i][n + i] = 1.0;
     }
 
-    // Forward elimination with partial pivoting
     for (int col = 0; col < n; ++col) {
         int pivotRow = col;
         for (int row = col + 1; row < n; ++row)
@@ -212,8 +161,7 @@ Matrix Matrix::Inverse() const {
         if (pivotRow != col) std::swap(aug.mData[col], aug.mData[pivotRow]);
 
         double pivot = aug.mData[col][col];
-        if (std::abs(pivot) < 1e-14)
-            throw std::runtime_error("Matrix is singular and cannot be inverted");
+        assert(std::abs(pivot) > 1e-14);
 
         for (int k = 0; k < 2 * n; ++k) aug.mData[col][k] /= pivot;
 
@@ -225,7 +173,6 @@ Matrix Matrix::Inverse() const {
         }
     }
 
-    // Extract right half
     Matrix result(n, n);
     for (int i = 0; i < n; ++i)
         for (int j = 0; j < n; ++j)
@@ -233,11 +180,7 @@ Matrix Matrix::Inverse() const {
     return result;
 }
 
-// ──────────────────────────── pseudo-inverse ────────────────────────────────
-
 Matrix Matrix::PseudoInverse() const {
-    // For overdetermined (rows >= cols): A^+ = (A^T A)^{-1} A^T
-    // For underdetermined (rows < cols): A^+ = A^T (A A^T)^{-1}
     if (mNumRows >= mNumCols) {
         Matrix At = Transpose();
         Matrix AtA = At * (*this);
@@ -247,4 +190,14 @@ Matrix Matrix::PseudoInverse() const {
         Matrix AAt = (*this) * At;
         return At * AAt.Inverse();
     }
+}
+
+Matrix Matrix::TikhonovInverse(double lambda) const {
+    Matrix At = Transpose();
+    Matrix AtA = At * (*this);
+    int n = AtA.GetNumRows();
+    Matrix I(n, n);
+    for (int i = 1; i <= n; ++i) I(i, i) = 1.0;
+    Matrix regularized = AtA + I * (lambda * lambda);
+    return regularized.Inverse() * At;
 }
