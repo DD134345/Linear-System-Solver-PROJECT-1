@@ -1,0 +1,16 @@
+# Compiled
+*.exe
+*.o
+*.out
+
+# IDE
+.vscode/
+.idea/
+
+# Archives
+*.zip
+
+# Misc
+Index
+project1_*.zip
+computer+hardware.zip
