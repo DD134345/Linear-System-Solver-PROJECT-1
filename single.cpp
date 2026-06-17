@@ -224,7 +224,7 @@ Matrix Matrix::operator-(const Matrix& m) const {
 
 Matrix Matrix::operator*(const Matrix& m) const {
     assert(mNumCols == m.mNumRows);
-    Matrix result(mNumRows, mNumCols);
+    Matrix result(mNumRows, m.mNumCols);
     for (int i = 0; i < mNumRows; ++i)
         for (int j = 0; j < m.mNumCols; ++j) {
             double sum = 0.0;
